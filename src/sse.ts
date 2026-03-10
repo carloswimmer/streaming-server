@@ -75,3 +75,11 @@ export function validateLastEventId(
 
 	return parsed;
 }
+
+export function broadcastSseEvent<TPayload>(
+	event: StreamEvent<TPayload>,
+): void {
+	for (const client of clients) {
+		sendSseEvent(client, event);
+	}
+}

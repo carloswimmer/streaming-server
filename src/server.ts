@@ -1,8 +1,15 @@
 import "dotenv/config";
 import express, { type Request, type Response } from "express";
+import { startIngestion } from "./ingestion.js";
 import { tempTestEvents } from "./mock/temp-test-events.js";
-import { type ProviderPayload, RingBuffer } from "./ringBuffer.js";
+import { MockProviderConsumer } from "./providerConsumer.js";
 import {
+	type ProviderPayload,
+	RingBuffer,
+	type StreamEvent,
+} from "./ringBuffer.js";
+import {
+	broadcastSseEvent,
 	handleSseConnection,
 	sendSseEvent,
 	validateLastEventId,
@@ -44,10 +51,16 @@ const config = loadConfig();
 const app = express();
 const ringBuffer = new RingBuffer<ProviderPayload>(config.ringBufferSize);
 
-// Keep this until we don't have Provider
-for (const event of tempTestEvents) {
-	ringBuffer.push(event);
-}
+// For dev purpose
+const provider = new MockProviderConsumer({ intervalMs: 3000 });
+const seedEvents = tempTestEvents;
+
+startIngestion({
+	provider,
+	ringBuffer,
+	broadcast: broadcastSseEvent,
+	seedEvents,
+});
 
 app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).send("ok");
