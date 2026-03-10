@@ -20,6 +20,7 @@ type EnvConfig = {
 	sseRetryMs: number;
 	heartbeatMs: number;
 	ringBufferSize: number;
+	providerReconnectMaxMs: number;
 };
 
 function loadConfig(): EnvConfig {
@@ -27,6 +28,9 @@ function loadConfig(): EnvConfig {
 	const sseRetryMs = Number(process.env.SSE_RETRY_MS ?? 2000);
 	const heartbeatMs = Number(process.env.HEARTBEAT_MS ?? 20000);
 	const ringBufferSize = Number(process.env.RING_BUFFER_SIZE ?? 10000);
+	const providerReconnectMaxMs = Number(
+		process.env.PROVIDER_RECONNECT_MAX_MS ?? 30000,
+	);
 
 	if (!Number.isFinite(port) || port <= 0) {
 		throw new Error("Invalid PORT value in environment.");
@@ -44,7 +48,17 @@ function loadConfig(): EnvConfig {
 		throw new Error("Invalid RING_BUFFER_SIZE value in environment.");
 	}
 
-	return { port, sseRetryMs, heartbeatMs, ringBufferSize };
+	if (!Number.isFinite(providerReconnectMaxMs) || providerReconnectMaxMs <= 0) {
+		throw new Error("Invalid PROVIDER_RECONNECT_MAX_MS value in environment.");
+	}
+
+	return {
+		port,
+		sseRetryMs,
+		heartbeatMs,
+		ringBufferSize,
+		providerReconnectMaxMs,
+	};
 }
 
 const config = loadConfig();
@@ -52,7 +66,11 @@ const app = express();
 const ringBuffer = new RingBuffer<ProviderPayload>(config.ringBufferSize);
 
 // For dev purpose
-const provider = new MockProviderConsumer({ intervalMs: 3000 });
+const provider = new MockProviderConsumer({
+	intervalMs: 3000,
+	maxReconnectMs: config.providerReconnectMaxMs,
+	failEveryNEvents: 5,
+});
 const seedEvents = tempTestEvents;
 
 startIngestion({
