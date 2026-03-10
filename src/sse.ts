@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { StreamEvent } from "./ringBuffer.js";
 
 export type SseClient = Response;
 
@@ -39,4 +40,38 @@ export function handleSseConnection(
 		}
 		res.end();
 	});
+}
+
+export function serializeSseEvent<TPayload>(
+	event: StreamEvent<TPayload>,
+): string {
+	const message = {
+		...event.data,
+		timestamp: event.timestamp,
+	};
+
+	return `id: ${event.id}\nevent: ${event.type}\ndata: ${JSON.stringify(message)}\n\n`;
+}
+
+export function sendSseEvent<TPayload>(
+	client: SseClient,
+	event: StreamEvent<TPayload>,
+): void {
+	client.write(serializeSseEvent(event));
+}
+
+export function validateLastEventId(
+	lastEventId: string | undefined,
+): number | null {
+	if (lastEventId === undefined) {
+		return null;
+	}
+
+	const parsed = Number(lastEventId);
+
+	if (!Number.isInteger(parsed) || parsed < 0) {
+		throw new Error("Invalid Last-Event-ID header");
+	}
+
+	return parsed;
 }
