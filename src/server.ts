@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type Request, type Response } from "express";
+import { readPositiveNumberEnv } from "./helper/readPositiveNumberEnv.js";
 import { startIngestion } from "./ingestion.js";
 import { tempTestEvents } from "./mock/temp-test-events.js";
 import { MockProviderConsumer } from "./providerConsumer.js";
@@ -24,40 +25,15 @@ type EnvConfig = {
 };
 
 function loadConfig(): EnvConfig {
-	const port = Number(process.env.PORT ?? 3000);
-	const sseRetryMs = Number(process.env.SSE_RETRY_MS ?? 2000);
-	const heartbeatMs = Number(process.env.HEARTBEAT_MS ?? 20000);
-	const ringBufferSize = Number(process.env.RING_BUFFER_SIZE ?? 10000);
-	const providerReconnectMaxMs = Number(
-		process.env.PROVIDER_RECONNECT_MAX_MS ?? 30000,
-	);
-
-	if (!Number.isFinite(port) || port <= 0) {
-		throw new Error("Invalid PORT value in environment.");
-	}
-
-	if (!Number.isFinite(sseRetryMs) || sseRetryMs <= 0) {
-		throw new Error("Invalid SSE_RETRY_MS value in environment.");
-	}
-
-	if (!Number.isFinite(heartbeatMs) || heartbeatMs <= 0) {
-		throw new Error("Invalid HEARTBEAT_MS value in environment.");
-	}
-
-	if (!Number.isFinite(ringBufferSize) || ringBufferSize <= 0) {
-		throw new Error("Invalid RING_BUFFER_SIZE value in environment.");
-	}
-
-	if (!Number.isFinite(providerReconnectMaxMs) || providerReconnectMaxMs <= 0) {
-		throw new Error("Invalid PROVIDER_RECONNECT_MAX_MS value in environment.");
-	}
-
 	return {
-		port,
-		sseRetryMs,
-		heartbeatMs,
-		ringBufferSize,
-		providerReconnectMaxMs,
+		port: readPositiveNumberEnv("PORT", 3000),
+		sseRetryMs: readPositiveNumberEnv("SSE_RETRY_MS", 2000),
+		heartbeatMs: readPositiveNumberEnv("HEARTBEAT_MS", 20000),
+		ringBufferSize: readPositiveNumberEnv("RING_BUFFER_SIZE", 10000),
+		providerReconnectMaxMs: readPositiveNumberEnv(
+			"PROVIDER_RECONNECT_MAX_MS",
+			30000,
+		),
 	};
 }
 
