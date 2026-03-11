@@ -45,7 +45,7 @@ const ringBuffer = new RingBuffer<ProviderPayload>(config.ringBufferSize);
 const provider = new MockProviderConsumer({
 	intervalMs: 3000,
 	maxReconnectMs: config.providerReconnectMaxMs,
-	failEveryNEvents: 5,
+	// failEveryNEvents: 5, // uncomment this option to test connection fails
 });
 const seedEvents = tempTestEvents;
 
